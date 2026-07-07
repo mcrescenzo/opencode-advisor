@@ -1,0 +1,15 @@
+
+# Beads / Dolt files (added by bd init)
+.beads/
+.dolt/
+*.db
+.beads-credential-key
+
+# Local runtime / agent state (not part of the plugin)
+.remember/
+.hermes-bughunt/
+.repo-review/
+node_modules/
+*.log
+.probe-events.log
+.opencode/
