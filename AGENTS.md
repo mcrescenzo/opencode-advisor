@@ -57,8 +57,8 @@ silently refund a spent session.
    `"*": "deny"` with allows only for read-only research (`read`, `list`,
    `glob`, `grep`, skills) plus a narrow read-only bash allowlist.
    Credential-bearing paths and destructive/publication/chaining shell
-   patterns stay hard-denied — see `README.md` for the full pattern lists and
-   keep both in sync if you change either.
+   patterns stay hard-denied — see `docs/security-model.md` for the full
+   pattern lists and keep both in sync if you change either.
 3. **Never enable the `advisor` tool inside the advisor child session.** The
    child prompt sets `tools: { advisor: false }` to prevent recursive
    consultation.

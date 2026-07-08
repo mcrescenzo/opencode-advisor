@@ -1,11 +1,15 @@
 {
   "name": "@mcrescenzo/opencode-advisor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "opencode plugin providing an advisor tool that consults a budgeted, read-only child-session strategist agent for mid-task design guidance and risk review.",
   "type": "module",
-  "engines": { "node": ">=20.11.0" },
+  "engines": {
+    "node": ">=20.11.0"
+  },
   "main": "./advisor.js",
-  "exports": { ".": "./advisor.js" },
+  "exports": {
+    ".": "./advisor.js"
+  },
   "files": [
     "advisor.js",
     "advisor-core.js",
@@ -20,12 +24,25 @@
     "check": "node --check advisor.js && node --check advisor-core.js",
     "test": "node --test tests/*.test.mjs"
   },
-  "dependencies": { "@opencode-ai/plugin": "^1.17.7" },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.17.7"
+  },
   "author": "Michael Crescenzo",
-  "publishConfig": { "access": "public" },
-  "repository": { "type": "git", "url": "https://github.com/mcrescenzo/opencode-advisor" },
-  "bugs": { "url": "https://github.com/mcrescenzo/opencode-advisor/issues" },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mcrescenzo/opencode-advisor"
+  },
+  "bugs": {
+    "url": "https://github.com/mcrescenzo/opencode-advisor/issues"
+  },
   "homepage": "https://github.com/mcrescenzo/opencode-advisor#readme",
-  "keywords": ["opencode", "opencode-plugin", "advisor"],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "advisor"
+  ],
   "license": "MIT"
 }
