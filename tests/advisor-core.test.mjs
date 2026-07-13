@@ -338,17 +338,27 @@ test("buildTranscript redacts credential-like text and tool outputs", () => {
   assert.ok(!transcript.includes("array-secret-value"));
 });
 
-test("buildTranscript truncates to the tail at TRANSCRIPT_CHAR_LIMIT", () => {
-  const big = "a".repeat(TRANSCRIPT_CHAR_LIMIT + 500);
+test("buildTranscript tail-slices a single oversized newest message", () => {
+  // Regression for advisor-3qh: when the newest chunk alone exceeds the limit,
+  // its tail (most recent content) must survive, not its head. Two parts whose
+  // joined body plus the role header overflow the limit make the head/tail
+  // boundary observable.
+  const dropHead = "DROPHEAD";
+  const keepTail = "KEEPTAIL";
+  const filler = "a".repeat(TRANSCRIPT_CHAR_LIMIT - dropHead.length);
   const transcript = buildTranscript([
-    { info: { role: "user" }, parts: [{ type: "text", text: big }] },
+    {
+      info: { role: "user" },
+      parts: [
+        { type: "text", text: dropHead + filler },
+        { type: "text", text: keepTail },
+      ],
+    },
   ]);
 
   assert.equal(transcript.length, TRANSCRIPT_CHAR_LIMIT);
-  // The role header is retained because buildTranscript now bounds each message
-  // before final transcript assembly instead of materializing then tail-slicing.
-  assert.ok(transcript.startsWith("USER:\n"));
-  assert.ok(transcript.includes("aaa"));
+  assert.ok(transcript.includes(keepTail), "tail content survives");
+  assert.ok(!transcript.includes(dropHead), "head content is dropped");
 });
 
 test("buildTranscript keeps recent messages first when bounding multi-message transcripts", () => {
@@ -359,8 +369,33 @@ test("buildTranscript keeps recent messages first when bounding multi-message tr
 
   assert.equal(transcript.length, TRANSCRIPT_CHAR_LIMIT);
   assert.ok(!transcript.includes("oldoldold"));
-  assert.ok(transcript.startsWith("ASSISTANT:\nnew"));
+  // The newest message alone fills the budget, so its role header is trimmed to
+  // preserve the full newest content (the tail) rather than the header.
   assert.ok(transcript.includes("newnewnew"));
+  assert.ok(!transcript.includes("ASSISTANT:"), "header trimmed to keep newest content");
+});
+
+test("buildTranscript keeps the tail of an oversized newest message across multiple messages", () => {
+  // Multi-message variant of advisor-3qh: only the newest message is oversized.
+  // Its tail survives; the older message is never reached.
+  const dropHead = "DROPHEAD";
+  const keepTail = "KEEPTAIL";
+  const filler = "a".repeat(TRANSCRIPT_CHAR_LIMIT - dropHead.length);
+  const transcript = buildTranscript([
+    { info: { role: "user" }, parts: [{ type: "text", text: "older message that should be dropped" }] },
+    {
+      info: { role: "assistant" },
+      parts: [
+        { type: "text", text: dropHead + filler },
+        { type: "text", text: keepTail },
+      ],
+    },
+  ]);
+
+  assert.equal(transcript.length, TRANSCRIPT_CHAR_LIMIT);
+  assert.ok(transcript.includes(keepTail), "newest message tail survives");
+  assert.ok(!transcript.includes(dropHead), "newest message head is dropped");
+  assert.ok(!transcript.includes("older message"), "older message is dropped");
 });
 
 test("buildTranscript includes the partial older boundary chunk when it fits", () => {

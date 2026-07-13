@@ -534,9 +534,13 @@ export function buildTranscript(messages) {
 
     if (!body) continue;
     const chunk = `${role.toUpperCase()}${agent ? ` (${agent})` : ""}:\n${body}`;
-    const additionalLength = chunk.length + (chunks.length ? separatorLength : 0);
-    if (chunks.length && totalLength + additionalLength > TRANSCRIPT_CHAR_LIMIT) {
-      const remaining = TRANSCRIPT_CHAR_LIMIT - totalLength - separatorLength;
+    const separatorForChunk = chunks.length ? separatorLength : 0;
+    const additionalLength = chunk.length + separatorForChunk;
+    if (totalLength + additionalLength > TRANSCRIPT_CHAR_LIMIT) {
+      // An oversized chunk (including the very first/newest one) is tail-sliced
+      // so the most recent content survives within the remaining budget. The
+      // separator only applies when there are already accumulated chunks.
+      const remaining = TRANSCRIPT_CHAR_LIMIT - totalLength - separatorForChunk;
       if (remaining > 0) {
         chunks.unshift(tailText(chunk, remaining));
         totalLength = TRANSCRIPT_CHAR_LIMIT;
