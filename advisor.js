@@ -389,10 +389,21 @@ function isPlainObject(value) {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
+// Tool names an operator sibling-glob key must not override. The exact default
+// objects for these tools carry non-negotiable denies (credential paths for the
+// filesystem tools, destructive/publication commands for bash, the recursion
+// guard for advisor, and all edit-family denies). Without this protection, an
+// operator key like `r*` or `b*` would be appended after the exact default
+// (OpenCode is last-match-wins on permission keys) and bypass those denies. The
+// filesystem research tools are listed here for the same reason as bash/edit:
+// `r*` globs to `read`, `g*` to `glob`/`grep`, `l*` to `list`, `gr*`/`gre*` to
+// `grep`. See advisor-ttl.1 / advisor-ttl.2 (bash/edit) and advisor-0rb
+// (filesystem) for the sibling-glob bypass these guard against.
 const PROTECTED_PERMISSION_KEYS = [
   "advisor",
   "bash",
   ...EDIT_TOOL_NAMES,
+  ...FILESYSTEM_RESEARCH_TOOLS,
 ];
 
 function globMatches(pattern, value) {

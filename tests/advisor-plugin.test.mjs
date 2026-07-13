@@ -502,6 +502,63 @@ test("config hook drops protected sibling glob permissions that would weaken adv
   assert.equal(permission.edit, "deny");
 });
 
+test("config hook drops filesystem sibling glob permissions that would bypass credential hard-denies", async () => {
+  // Regression for advisor-0rb: an operator sibling glob that matches a
+  // filesystem research tool name (r*/g*/l*/gr*/gre*) must not be appended
+  // after the exact default object, where OpenCode's last-match-wins rule
+  // resolution would let it override the credential-path hard-denies.
+  const { hooks } = await makeHooks();
+  const cfg = {
+    agent: {
+      [ADVISOR_AGENT]: {
+        permission: {
+          "r*": "allow",
+          "g*": { "**/.env": "allow" },
+          "l*": "allow",
+          "gr*": "allow",
+          "gre*": "ask",
+        },
+      },
+    },
+  };
+
+  await hooks.config(cfg);
+
+  const permission = cfg.agent[ADVISOR_AGENT].permission;
+  assertNoAsk(permission);
+  // Sibling globs matching filesystem tools are neutralized (dropped), so the
+  // exact default objects retain final precedence.
+  assert.equal(Object.hasOwn(permission, "r*"), false, "r* must not survive");
+  assert.equal(Object.hasOwn(permission, "g*"), false, "g* must not survive");
+  assert.equal(Object.hasOwn(permission, "l*"), false, "l* must not survive");
+  assert.equal(Object.hasOwn(permission, "gr*"), false, "gr* must not survive");
+  assert.equal(Object.hasOwn(permission, "gre*"), false, "gre* must not survive");
+  // The exact defaults keep their credential-path hard-denies and normal allows.
+  assertCredentialPathDenies(permission);
+});
+
+test("config hook preserves filesystem sibling glob deny as operator hardening", async () => {
+  // A sibling glob that hardens (deny) a filesystem tool is preserved, mirroring
+  // the bash/edit deny behavior. Only non-deny sibling globs are dropped.
+  const { hooks } = await makeHooks();
+  const cfg = {
+    agent: {
+      [ADVISOR_AGENT]: {
+        permission: {
+          "r*": "deny",
+          "g*": "deny",
+        },
+      },
+    },
+  };
+
+  await hooks.config(cfg);
+
+  const permission = cfg.agent[ADVISOR_AGENT].permission;
+  assert.equal(permission["r*"], "deny", "r* deny is preserved as operator hardening");
+  assert.equal(permission["g*"], "deny", "g* deny is preserved as operator hardening");
+});
+
 test("config hook keeps built-in bash hard-denies after operator overrides", async () => {
   const { hooks } = await makeHooks();
   const cfg = {
